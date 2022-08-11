@@ -1,13 +1,16 @@
 # pylint: disable=C0303
-from images import IMAGES
+import os
+import time
 
+from game.images import IMAGES 
+from game.utility_classes import Validators
 
 class Hangman:
     """
     The hangman game.
     """
 
-    def __init__(self, word: str, tries: int = 7) -> None:
+    def __init__(self, word: str, lang_dict: dict, tries: int = 7) -> None:
         """
         Constructs all the necessary attributes for the hangman object.
 
@@ -28,38 +31,19 @@ class Hangman:
             The list of letters the player has guessed.
         _hidden_word : list
             The list of asterisks representing the length of the word to be guessed.
-        _messages : dict[str:str]
+        _formatter : object
+            The formatter object 
+        _lang_option : str
+            This set up the language. 
+        _message_dict : dict[str:str]
             The game messages to be displayed to the player.
         """
-        self._word: str = word
-        self._tries: int = tries
+        self._formatter = Validators()
+        self._word: str = self._formatter.validate_word(word)
+        self._lang_dict: dict = self._formatter.validate_lang_dict(lang_dict)
+        self._tries: int = self._formatter.validate_tries(tries) 
         self._guessed_letters: list = []
         self._hidden_word: list = ["*"] * len(word)
-        self._messages: dict[str:str] = {
-            "VICTORY": "You won the game",
-            "NO_VICTORY": "You lose the game",
-            "TRY_AGAIN_ALERT": "You have already used this letter, try with another",
-        }
-
-    def check_letter_format(self, letter_to_inspect: str) -> None:
-        """
-        This function checks that the letter isn't a number or contains more than one character
-
-        Parameters
-        ----------
-        letter_to_inspect : str
-            The letter to be inspected.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        Exception
-            If the value entered is invalid."""
-        if len(letter_to_inspect) != 1 or letter_to_inspect.isdigit():
-            raise Exception("The value entered is invalid.")
 
     def set_gameboard(self, word_to_display: str, tries: int) -> None:
         """
@@ -78,8 +62,9 @@ class Hangman:
         """
         print(IMAGES[tries])
         print(word_to_display)
+        print(f'❤️ : {tries}')
 
-    def check_if_letter_was_used(self, guess_letter: str) -> None:
+    def check_if_letter_was_used(self, guess_letter: str) -> bool:
         """
         This function checks if the player has used the same letter more than once.
         If it was, it prints an alert message.
@@ -93,8 +78,8 @@ class Hangman:
         -------
         None
         """
-        if guess_letter in self._guessed_letters:
-            print(self._messages["TRY_AGAIN_ALERT"])
+        return guess_letter in self._guessed_letters
+            
 
     def check_and_replace(self, letter: str) -> None:
         """
@@ -117,27 +102,47 @@ class Hangman:
         else:
             self._tries -= 1
 
-    def check_status(self, word_to_check: str) -> bool:
+    def game_is_finished(self, tries_to_check:int, word_to_check: list) -> bool:
         """
         This function checks the status of the game. \n
-        Takes a word as an input and checks if it contains any asterisks.
-        If it doesn't contain any asterisks, it means the player has guessed all
-        the letters correctly and has won the game.
-        If it does contain asterisks, it means the player has not guessed all the
-        letters correctly and has to keep playing.
+        Takes a word and tries as an input and checks if it contains any asterisks or 
+        tries is equal to 0.
+        Return True if the player has guessed all the letters correctly or their number
+        of tries is equal to 0.
+        Return False if the player has not guessed all the letters correctly and
+        have tries to keep playing.
 
         Parameters
         ----------
         word_to_check: str
             The word to check.
-
+        tries: int
+            The tries to check.
         Returns
         -------
         bool
             Returns True if the player has won the game and
             False if the player has not won the game."""
-        return "*" not in word_to_check
+        return tries_to_check == 0 or "*" not in word_to_check
+        
+    def results(self, word_to_guess) -> str:
+        if "*" not in word_to_guess: 
+            return f"{self._lang_dict['messages']['WIN_MSG']} The word was {self._word}"
+        return f"{self._lang_dict['messages']['LOSE_MSG']} The word was {self._word}"
+    
+    def guess_letter(self) -> str:
+        letter: str = input(self._lang_dict['messages']['GUESS_QUESTION']).strip().lower()
+        return self._formatter.validate_letter(letter)
+    
+    @staticmethod
+    def _clean_screen():
+        os.system("cls")
 
+    @staticmethod
+    def _timer():
+        seconds_until_next_guess = 2
+        time.sleep(seconds_until_next_guess)
+    
     def run_game(self) -> str:
         """
         This function runs the game.
@@ -151,19 +156,19 @@ class Hangman:
         -------
         str
             A message indicating whether the player won or lost."""
-        while self._tries >= 0:
+        game_over = False
+        while not game_over:
+            Hangman._clean_screen()
             self.set_gameboard(word_to_display=self._hidden_word, tries=self._tries)
-            letter: str = input("Guess a letter: ").strip().lower()
-            self.check_letter_format(letter)
+            letter = self.guess_letter()
             if self.check_if_letter_was_used(letter):
-                continue
-            self.check_and_replace(letter)
-            if self.check_status(self._hidden_word):
-                return f"{self._messages['VICTORY']}. The word was {self._word}"
-        return f"{self._messages['NO_VICTORY']}. The word was {self._word}"
+                print(self._lang_dict['messages']["SAME_LETTER_MSG"])
+                Hangman._timer()
+            else:
+                self.check_and_replace(letter)
+            game_over = self.game_is_finished(tries_to_check=self._tries, 
+                              word_to_check=self._hidden_word)
+                
+        return self.results(self._hidden_word)
 
 
-if __name__ == "__main__":
-    hangman = Hangman(word="hangman")
-    results = hangman.run_game()
-    print(results)
