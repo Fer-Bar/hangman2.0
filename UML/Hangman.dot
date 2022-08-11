@@ -1,0 +1,7 @@
+digraph "Hangman" {
+rankdir=BT
+charset="utf-8"
+"game.hangman.Hangman" [color="black", fontcolor="black", label="{game.hangman.Hangman|_formatter\l_guessed_letters : list\l_hidden_word : list\l_lang_dict : dict\l_tries : int\l_word : str\l|__init__(word: str, lang_dict: dict, tries: int): None\l_clean_screen()\l_timer()\lcheck_and_replace(letter: str): None\lcheck_if_letter_was_used(guess_letter: str): bool\lgame_is_finished(tries_to_check: int, word_to_check: list): bool\lguess_letter(): str\lresults(word_to_guess): str\lrun_game(): str\lset_gameboard(word_to_display: str, tries: int): None\l}", shape="record", style="solid"];
+"game.utility_classes.Validators" [color="black", fontcolor="black", label="{game.utility_classes.Validators|\l|validate_argv(argv: list[str])\lvalidate_lang_dict(dictionary)\lvalidate_letter(letter_to_inspect: str): str\lvalidate_tries(tries)\lvalidate_word(word)\l}", shape="record", style="solid"];
+"game.utility_classes.Validators" -> "game.hangman.Hangman" [arrowhead="diamond", arrowtail="none", fontcolor="green", label="_formatter", style="solid"];
+}
